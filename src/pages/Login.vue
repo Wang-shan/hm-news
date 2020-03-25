@@ -10,8 +10,7 @@
       :rule="/^1\d{4,10}$/"
       message="用户名格式不对"
       ref="username"
-    >
-    </hm-input>
+    ></hm-input>
     <hm-input
       type="password"
       placeholder="请输入密码"
@@ -19,12 +18,12 @@
       :rule="/^\d{3,12}$/"
       message="用户密码格式错误"
       ref="password"
-    >
-    </hm-input>
+    ></hm-input>
 
     <hm-button @click="login">登录</hm-button>
     <div class="go-register">
-      没有账号？去<router-link class="link" to="/register">注册</router-link>
+      没有账号？去
+      <router-link class="link" to="/register">注册</router-link>
     </div>
   </div>
 </template>
@@ -52,13 +51,21 @@ export default {
       }).then(res => {
         // res.data才是后台真正返回的数据
         console.log(res.data)
-        if (res.data.statusCode === 200) {
+        const { statusCode, data, message } = res.data
+        if (statusCode === 200) {
           // alert('恭喜你，登录成功了')
-          this.$toast.success('登录成功')
-          // 如果登录成功了，需要跳转到个人中心
-          this.$router.push('/user')
+          this.$toast.success(message)
+          //保存登录的token信息
+          localStorage.setItem('token', data.token)
+          localStorage.setItem('user_id', data.user.id)
+          // 如果登录成功了，需要跳转到个人中心 也可能需要回跳
+          if (this.$route.params.back) {
+            this.$$router.back
+          } else {
+            this.$router.push('/user')
+          }
         } else {
-          this.$toast.fail('用户名或者密码错误')
+          this.$toast.fail(message)
         }
       })
     }
@@ -70,8 +77,8 @@ export default {
     }
   },
   created() {
-    this.username=this.$router.params.username
-    this.password=this.$router.params.password
+    this.username = this.$route.params.username
+    this.password = this.$route.params.password
   }
 }
 </script>
