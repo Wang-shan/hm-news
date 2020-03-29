@@ -1,5 +1,5 @@
 <template>
-  <div class="post-detail">
+  <div class="post-detail" :class="isShow?'pd140':'pd50'">
     <div class="header">
       <div class="left">
         <span class="iconfont iconjiantou2"></span>
@@ -23,7 +23,9 @@
         <span>{{detail.crtete_date|date}}</span>
       </div>
       <!-- 内容 -->
-      <div class="content" v-html="detail.content"></div>
+      <div v-if="detail.type === 1" class="content" v-html="detail.content"></div>
+      <video v-else :src="detail.content" controls></video>
+
       <div class="btns">
         <div class="btn like" :class="{active: detail.has_like}" @click="like">
           <span class="iconfont icondianzan"></span>
@@ -33,6 +35,12 @@
           <span class="iconfont iconweixin"></span>
           <span>微信</span>
         </div>
+      </div>
+      <!-- 跟帖列表 -->
+      <div class="comment-list">
+        <div class="title">精彩跟帖</div>
+        <!-- 评论列表 -->
+        <hm-comment v-for="item in commentList" :key="item.id" :comment="item" @reply="reply"></hm-comment>
       </div>
     </div>
     <!-- 文章的底部 -->
@@ -46,8 +54,8 @@
         <span class="iconfont iconfenxiang"></span>
       </div>
       <div class="textarea" v-else>
-        <textarea placeholder="回复" @blur="handleBlur" ref="textarea"></textarea>
-        <div class="send">发送</div>
+        <textarea placeholder="回复" @blur="handleBlur" ref="textarea" v-model="content"></textarea>
+        <div class="send" @click="addComment">发送</div>
       </div>
     </div>
   </div>
@@ -61,11 +69,16 @@ export default {
       detail: {
         user: {}
       },
-      isShow: false
+      isShow: false,
+      //评论列表
+      commentList: {},
+      replyId: '',
+      content: ''
     }
   },
   async created() {
     this.getDetail()
+    this.getComment()
   },
   methods: {
     async getDetail() {
@@ -143,13 +156,63 @@ export default {
       this.$refs.textarea.focus()
     },
     handleBlur() {
-      this.isShow = false
+      if (!this.content) {
+        this.isShow = false
+      }
+    },
+    //获取文章评论
+    async getComment() {
+      const id = this.$route.params.id
+      const res = await this.$axios.get(`/post_comment/${id}`)
+      // console.log(res)
+      const { statusCode, data } = res.data
+      if (statusCode === 200) {
+        this.commentList = data
+        console.log(this.commentList)
+      }
+    },
+    //回复j
+    async reply(id) {
+      console.log(id)
+      //存id
+      this.replyId = id
+      this.isShow = true
+      //获取焦点
+      await this.$nextTick()
+      this.$refs.textarea.focus()
+    },
+    async addComment() {
+      const res = await this.$axios({
+        method: 'post',
+        url: `/post_comment/${this.detail.id}`,
+        data: {
+          content: this.content,
+          parent_id: this.replyId
+        }
+      })
+      console.log(res)
+      const { statusCode, message } = res.data
+      if (statusCode === 200) {
+        this.$toast.success(message)
+        //成功的处理
+        this.content = ''
+        this.isShow = false
+        this.replyId = ''
+        //重新加载评论
+        this.getComment()
+      }
     }
   }
 }
 </script>
 
 <style lang="less" scoped>
+.pb140 {
+  padding-bottom: 150px;
+}
+.pd50 {
+  padding-bottom: 50px;
+}
 .header {
   display: flex;
   height: 50px;
@@ -206,6 +269,9 @@ export default {
   .content {
     font-size: 14px;
   }
+  video {
+    width: 100%;
+  }
 }
 
 .btns {
@@ -234,8 +300,21 @@ export default {
     border: 1px solid #00c800;
   }
 }
-
+.comment-list {
+  border-top: 3px solid #ccc;
+  .title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 700;
+    padding: 20px 0;
+  }
+}
 .footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  background-color: #fff;
+  width: 100%;
   .input {
     height: 50px;
     display: flex;

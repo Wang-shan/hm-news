@@ -14,6 +14,7 @@ import HmButton from './components/HmButton.vue'
 import HmInput from './components/HmInput.vue'
 import HmNavbar from './components/HmNavbar.vue'
 import HmPost from './components/HmPost.vue'
+import HmComment from './components/HmComment.vue'
 
 // vant ui 的处理-----------------------------------
 // import vant from 'vant'
@@ -80,6 +81,7 @@ Vue.component('hm-button', HmButton)
 Vue.component('hm-input', HmInput)
 Vue.component('hm-navbar', HmNavbar)
 Vue.component('hm-post', HmPost)
+Vue.component('hm-comment', HmComment)
 
 axios.defaults.baseURL = 'http://localhost:3000'
 Vue.prototype.$axios = axios
@@ -88,6 +90,20 @@ Vue.prototype.$axios = axios
 import moment from 'moment'
 Vue.filter('date', function(input) {
   return moment(input).format('YYYY-MM-DD')
+})
+
+Vue.filter('date2', function(input) {
+  const d = new Date(input)
+  const now = new Date()
+  const hour = ((now - d) / 1000 / 60 / 60) | 0
+  if (hour < 1) {
+    return '1小时内'
+  }
+  if (hour < 24) {
+    return hour + '小时前'
+  } else {
+    return moment(input).format('YYYY-MM-DD HH:mm:ss')
+  }
 })
 
 Vue.config.productionTip = false
